@@ -1,0 +1,15 @@
+apply plugin: ServicePlugin
+
+dependencies {
+    compile project(":common")
+    compile project(":common-swagger")
+    compile project(":customer-service-api-web")
+    compile project(":customer-service-api-messaging")
+
+    compile "io.eventuate.tram.core:eventuate-tram-spring-reactive-jdbc-kafka"
+    compile "io.eventuate.tram.sagas:eventuate-tram-sagas-spring-reactive-participant"
+
+    compile "org.springframework.boot:spring-boot-starter"
+    compile "org.springframework.boot:spring-boot-starter-actuator"
+    compile "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
+}
