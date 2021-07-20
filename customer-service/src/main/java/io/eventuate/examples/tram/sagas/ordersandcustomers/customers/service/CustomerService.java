@@ -14,6 +14,8 @@ import reactor.core.publisher.Mono;
 
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class CustomerService {
@@ -38,13 +40,15 @@ public class CustomerService {
 
   public Mono<?> reserveCredit(long orderId, long customerId, Money orderTotal) {
 
-    Mono<Customer> possibleCustomer = customerRepository.findById(customerId);
+    Mono<Customer> possibleCustomer = customerRepository.findById(Mono.just(customerId));
 
     return possibleCustomer
-            .flatMap(customer -> creditReservationRepository
-                    .findAllByCustomerId(customerId)
-                    .collectList()
-                    .flatMap(creditReservations -> handleCreditReservation(creditReservations, customer, orderId, customerId, orderTotal)))
+            .flatMap(customer -> {
+              return creditReservationRepository
+                      .findAllByCustomerId(customerId)
+                      .collectList()
+                      .flatMap(creditReservations -> handleCreditReservation(creditReservations, customer, orderId, customerId, orderTotal));
+            })
             .switchIfEmpty(Mono.error(new CustomerNotFoundException()))
             .as(transactionalOperator::transactional)
             .doOnError(throwable -> logger.error("credit reservation failed", throwable));

@@ -9,7 +9,6 @@ import io.eventuate.examples.tram.sagas.ordersandcustomers.customers.domain.Cust
 import io.eventuate.tram.commands.consumer.CommandMessage;
 import io.eventuate.tram.messaging.common.Message;
 import io.eventuate.tram.reactive.commands.consumer.ReactiveCommandHandlers;
-import io.eventuate.tram.sagas.participant.SagaCommandHandlersBuilder;
 import io.eventuate.tram.sagas.reactive.participant.ReactiveSagaCommandHandlersBuilder;
 import reactor.core.publisher.Mono;
 
@@ -33,14 +32,12 @@ public class CustomerCommandHandler {
 
   public Mono<Message> reserveCredit(CommandMessage<ReserveCreditCommand> cm) {
     ReserveCreditCommand cmd = cm.getCommand();
-    try {
-      customerService.reserveCredit(cmd.getOrderId(), cmd.getCustomerId(), cmd.getOrderTotal());
-      return withSuccess(new CustomerCreditReserved());
-    } catch (CustomerNotFoundException e) {
-      return withFailure(new CustomerNotFound());
-    } catch (CustomerCreditLimitExceededException e) {
-      return withFailure(new CustomerCreditLimitExceeded());
-    }
+
+    return customerService
+            .reserveCredit(cmd.getOrderId(), cmd.getCustomerId(), cmd.getOrderTotal())
+            .flatMap(m -> withSuccess(new CustomerCreditReserved()))
+            .onErrorResume(CustomerNotFoundException.class, e -> withFailure(new CustomerNotFound()))
+            .onErrorResume(CustomerCreditLimitExceededException.class, e -> withFailure(new CustomerCreditLimitExceeded()));
   }
 
 }
