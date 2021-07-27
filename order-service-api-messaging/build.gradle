@@ -1,0 +1,8 @@
+dependencies {
+    compile project(":common")
+    compile project(":customer-service-api-messaging")
+
+    compile "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
+}
+
+
