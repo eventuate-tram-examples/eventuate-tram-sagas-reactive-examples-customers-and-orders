@@ -54,7 +54,7 @@ public class CustomerServiceProxyTest {
                     .withBody(expectedResponse)));
 
 
-    GetCustomerResponse customer = customerServiceProxy.findCustomerById("101").block(Duration.ofSeconds(30)).get();
+    GetCustomerResponse customer = customerServiceProxy.findCustomerById("101").block().get();
 
     assertEquals(new Long(101L), customer.getCustomerId());
 
