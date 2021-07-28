@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.time.Duration;
 import java.util.stream.IntStream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -53,7 +54,7 @@ public class CustomerServiceProxyTest {
                     .withBody(expectedResponse)));
 
 
-    GetCustomerResponse customer = customerServiceProxy.findCustomerById("101").block().get();
+    GetCustomerResponse customer = customerServiceProxy.findCustomerById("101").block(Duration.ofSeconds(30)).get();
 
     assertEquals(new Long(101L), customer.getCustomerId());
 
