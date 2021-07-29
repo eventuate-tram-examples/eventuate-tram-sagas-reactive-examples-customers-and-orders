@@ -76,8 +76,6 @@ public class CustomerServiceProxyTest {
     IntStream.range(0, 100).forEach(i -> {
               try {
                 customerServiceProxy.findCustomerById("99").block();
-              } catch (CallNotPermittedException e) {
-                throw e;
               } catch (UnknownProxyException e) {
                 //
               }
