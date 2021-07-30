@@ -5,6 +5,7 @@ import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.domain.Order;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.domain.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import reactor.core.publisher.Mono;
 
 public class OrderService {
 
@@ -15,17 +16,27 @@ public class OrderService {
     this.orderRepository = orderRepository;
   }
 
-  public Order createOrder(OrderDetails orderDetails) {
-    Order order = Order.createOrder(orderDetails);
-    orderRepository.save(order);
-    return order;
+  public Mono<Order> createOrder(OrderDetails orderDetails) {
+    return orderRepository.save(Order.createOrder(orderDetails));
   }
 
-  public void approveOrder(Long orderId) {
-    orderRepository.findById(orderId).get().approve();
+  public Mono<Void> approveOrder(Long orderId) {
+    return orderRepository
+            .findById(orderId)
+            .flatMap(o -> {
+              o.approve();
+              return orderRepository.save(o);
+            })
+            .then();
   }
 
-  public void rejectOrder(Long orderId, RejectionReason rejectionReason) {
-    orderRepository.findById(orderId).get().reject(rejectionReason);
+  public Mono<Void> rejectOrder(Long orderId, RejectionReason rejectionReason) {
+    return orderRepository
+            .findById(orderId)
+            .flatMap(o -> {
+              o.reject(rejectionReason);
+              return orderRepository.save(o);
+            })
+            .then();
   }
 }

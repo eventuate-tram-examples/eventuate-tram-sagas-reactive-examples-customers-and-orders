@@ -14,3 +14,11 @@ CREATE TABLE credit_reservation (
   order_id BIGINT,
   reservation DECIMAL
 );
+
+CREATE TABLE orders (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  state VARCHAR(32),
+  rejection_reason VARCHAR(32),
+  customer_id BIGINT,
+  order_total DECIMAL
+);

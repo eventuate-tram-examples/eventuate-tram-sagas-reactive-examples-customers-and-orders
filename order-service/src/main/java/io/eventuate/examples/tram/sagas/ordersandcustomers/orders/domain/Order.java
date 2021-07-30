@@ -4,13 +4,15 @@ package io.eventuate.examples.tram.sagas.ordersandcustomers.orders.domain;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.OrderDetails;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.OrderState;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.RejectionReason;
+import org.springframework.data.domain.Persistable;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name="orders")
 @Access(AccessType.FIELD)
-public class Order {
+public class Order implements Persistable<Long> {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,20 +21,22 @@ public class Order {
   @Enumerated(EnumType.STRING)
   private OrderState state;
 
-  @Embedded
-  private OrderDetails orderDetails;
+  private Long customerId;
+
+  private BigDecimal orderTotal;
 
   @Enumerated(EnumType.STRING)
   private RejectionReason rejectionReason;
 
-  @Version
-  private Long version;
+  @org.springframework.data.annotation.Transient
+  private boolean newOrder = false;
 
   public Order() {
   }
 
   public Order(OrderDetails orderDetails) {
-    this.orderDetails = orderDetails;
+    this.customerId = orderDetails.getCustomerId();
+    this.orderTotal = orderDetails.getOrderTotal().getAmount();
     this.state = OrderState.PENDING;
   }
 
@@ -46,6 +50,14 @@ public class Order {
 
   public void setId(long id) {
     this.id = id;
+  }
+
+  public Long getCustomerId() {
+    return customerId;
+  }
+
+  public BigDecimal getOrderTotal() {
+    return orderTotal;
   }
 
   public void approve() {
@@ -63,5 +75,10 @@ public class Order {
 
   public RejectionReason getRejectionReason() {
     return rejectionReason;
+  }
+
+  @Override
+  public boolean isNew() {
+    return newOrder;
   }
 }

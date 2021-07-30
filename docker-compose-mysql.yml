@@ -13,12 +13,16 @@ services:
       - zookeeper
       - cdc-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql/eventuate
-      SPRING_DATASOURCE_USERNAME: mysqluser
-      SPRING_DATASOURCE_PASSWORD: mysqlpw
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.jdbc.Driver
+      EVENTUATE_REACTIVE_DB_DRIVER: mysql
+      EVENTUATE_REACTIVE_DB_HOST: mysql
+      EVENTUATE_REACTIVE_DB_PORT: 3306
+      EVENTUATE_REACTIVE_DB_USERNAME: mysqluser
+      EVENTUATE_REACTIVE_DB_PASSWORD: mysqlpw
+      EVENTUATE_REACTIVE_DB_DATABASE: eventuate
       EVENTUATELOCAL_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EVENTUATELOCAL_ZOOKEEPER_CONNECTION_STRING: zookeeper:2181
+      SPRING_R2DBC_URL: r2dbc:mysql://mysql:3306/eventuate
+      SPRING_R2DBC_USERNAME: mysqluser
+      SPRING_R2DBC_PASSWORD: mysqluser
       SPRING_SLEUTH_ENABLED: "true"
       SPRING_SLEUTH_SAMPLER_PROBABILITY: 1
       SPRING_ZIPKIN_BASE_URL: http://zipkin:9411/

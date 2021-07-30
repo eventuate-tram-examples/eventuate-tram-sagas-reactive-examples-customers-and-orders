@@ -16,3 +16,5 @@ ${dockerinfrastructure}Up
 ${dockerall}Up
 
 ./gradlew :end-to-end-tests:cleanTest :end-to-end-tests:test
+
+${dockerall}Down
