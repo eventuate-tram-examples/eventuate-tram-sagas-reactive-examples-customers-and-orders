@@ -20,7 +20,10 @@ public class CustomerServiceProxy {
   private String customerServiceUrl;
   private TimeLimiter timeLimiter;
 
-  public CustomerServiceProxy(WebClient client, CircuitBreakerRegistry circuitBreakerRegistry, String customerServiceUrl, TimeLimiterRegistry timeLimiterRegistry) {
+  public CustomerServiceProxy(WebClient client,
+                              CircuitBreakerRegistry circuitBreakerRegistry,
+                              String customerServiceUrl,
+                              TimeLimiterRegistry timeLimiterRegistry) {
     this.client = client;
     this.cb = circuitBreakerRegistry.circuitBreaker("MY_CIRCUIT_BREAKER");
     this.timeLimiter = timeLimiterRegistry.timeLimiter("MY_TIME_LIMITER");

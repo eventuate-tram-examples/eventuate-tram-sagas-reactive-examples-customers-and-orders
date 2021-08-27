@@ -4,29 +4,25 @@ package io.eventuate.examples.tram.sagas.ordersandcustomers.orders.domain;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.OrderDetails;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.OrderState;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.RejectionReason;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Persistable;
+import org.springframework.data.relational.core.mapping.Table;
 
-import javax.persistence.*;
 import java.math.BigDecimal;
 
-@Entity
-@Table(name="orders")
-@Access(AccessType.FIELD)
+@Table("orders")
 public class Order implements Persistable<Long> {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Enumerated(EnumType.STRING)
-  private OrderState state;
+  private String state;
 
   private Long customerId;
 
   private BigDecimal orderTotal;
 
-  @Enumerated(EnumType.STRING)
-  private RejectionReason rejectionReason;
+  private String rejectionReason;
 
   @org.springframework.data.annotation.Transient
   private boolean newOrder = false;
@@ -37,11 +33,13 @@ public class Order implements Persistable<Long> {
   public Order(OrderDetails orderDetails) {
     this.customerId = orderDetails.getCustomerId();
     this.orderTotal = orderDetails.getOrderTotal().getAmount();
-    this.state = OrderState.PENDING;
+    this.state = OrderState.PENDING.name();
   }
 
   public static Order createOrder(OrderDetails orderDetails) {
-    return new Order(orderDetails);
+    Order o = new Order(orderDetails);
+    o.newOrder = true;
+    return o;
   }
 
   public Long getId() {
@@ -61,19 +59,19 @@ public class Order implements Persistable<Long> {
   }
 
   public void approve() {
-    this.state = OrderState.APPROVED;
+    this.state = OrderState.APPROVED.name();
   }
 
   public void reject(RejectionReason rejectionReason) {
-    this.state = OrderState.REJECTED;
-    this.rejectionReason = rejectionReason;
+    this.state = OrderState.REJECTED.name();
+    this.rejectionReason = rejectionReason.name();
   }
 
-  public OrderState getState() {
+  public String getState() {
     return state;
   }
 
-  public RejectionReason getRejectionReason() {
+  public String getRejectionReason() {
     return rejectionReason;
   }
 

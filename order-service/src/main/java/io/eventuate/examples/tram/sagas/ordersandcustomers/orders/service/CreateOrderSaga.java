@@ -48,7 +48,8 @@ public class CreateOrderSaga implements SimpleReactiveSaga<CreateOrderSagaData> 
 
   private Mono<Void> create(CreateOrderSagaData data) {
     return orderService
-            .createOrder(data.getOrderDetails()).map(o -> {
+            .createOrder(data.getOrderDetails())
+            .map(o -> {
               data.setOrderId(o.getId());
               return o;
             })
@@ -56,12 +57,13 @@ public class CreateOrderSaga implements SimpleReactiveSaga<CreateOrderSagaData> 
   }
 
   private Mono<CommandWithDestination> reserveCredit(CreateOrderSagaData data) {
-    long orderId = data.getOrderId();
     Long customerId = data.getOrderDetails().getCustomerId();
     Money orderTotal = data.getOrderDetails().getOrderTotal();
-    return Mono.just(send(new ReserveCreditCommand(customerId, orderId, orderTotal))
-            .to("customerService")
-            .build());
+
+    return Mono
+            .fromSupplier(() -> send(new ReserveCreditCommand(customerId, data.getOrderId(), orderTotal))
+                      .to("customerService")
+                      .build());
   }
 
   private Mono<Void> approve(CreateOrderSagaData data) {

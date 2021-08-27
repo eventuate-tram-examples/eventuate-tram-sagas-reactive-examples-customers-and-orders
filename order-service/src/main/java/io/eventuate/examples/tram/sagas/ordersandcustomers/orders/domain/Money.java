@@ -4,13 +4,8 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.Embeddable;
 import java.math.BigDecimal;
 
-@Embeddable
-@Access(AccessType.FIELD)
 public class Money {
 
   public static final Money ZERO = new Money(0);

@@ -35,7 +35,7 @@ public class OrderSagaService {
     CreateOrderSagaData data = new CreateOrderSagaData(orderDetails);
     return sagaInstanceFactory
             .create(createOrderSaga, data)
-            .then(orderRepository.findById(data.getOrderId()))
+            .flatMap(instance -> orderRepository.findById(data.getOrderId()))
             .as(transactionalOperator::transactional);
   }
 }
