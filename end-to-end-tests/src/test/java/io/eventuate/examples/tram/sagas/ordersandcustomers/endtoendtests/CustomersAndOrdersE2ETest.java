@@ -67,6 +67,17 @@ public class CustomersAndOrdersE2ETest {
     assertOrderState(createOrderResponse.getOrderId(), OrderState.APPROVED, null);
   }
 
+  @Test
+  public void shouldReject() {
+    CreateCustomerResponse createCustomerResponse = restTemplate.postForObject(baseUrl("customers"),
+            new CreateCustomerRequest(CUSTOMER_NAME, new Money("10.00")), CreateCustomerResponse.class);
+
+    CreateOrderResponse createOrderResponse = restTemplate.postForObject(baseUrl("orders"),
+            new CreateOrderRequest(createCustomerResponse.getCustomerId(), new Money("12.34")), CreateOrderResponse.class);
+
+    assertOrderState(createOrderResponse.getOrderId(), OrderState.REJECTED, null);
+  }
+
   private void assertOrderState(Long id, OrderState expectedState, RejectionReason expectedRejectionReason) {
     Eventually.eventually(60, 500, TimeUnit.MILLISECONDS, () -> {
       ResponseEntity<GetOrderResponse> getOrderResponseEntity = restTemplate.getForEntity(baseUrl("orders/" + id), GetOrderResponse.class);

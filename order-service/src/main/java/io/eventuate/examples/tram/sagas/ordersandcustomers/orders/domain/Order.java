@@ -9,6 +9,7 @@ import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 @Table("orders")
 public class Order implements Persistable<Long> {
@@ -64,7 +65,7 @@ public class Order implements Persistable<Long> {
 
   public void reject(RejectionReason rejectionReason) {
     this.state = OrderState.REJECTED.name();
-    this.rejectionReason = rejectionReason.name();
+    this.rejectionReason = Optional.ofNullable(rejectionReason).map(Enum::name).orElse(null);
   }
 
   public String getState() {
