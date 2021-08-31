@@ -10,6 +10,7 @@ import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.web.Create
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.web.CreateOrderResponse;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.web.GetOrderResponse;
 import io.eventuate.util.test.async.Eventually;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.concurrent.TimeUnit;
@@ -75,7 +77,24 @@ public class CustomersAndOrdersE2ETest {
     CreateOrderResponse createOrderResponse = restTemplate.postForObject(baseUrl("orders"),
             new CreateOrderRequest(createCustomerResponse.getCustomerId(), new Money("12.34")), CreateOrderResponse.class);
 
-    assertOrderState(createOrderResponse.getOrderId(), OrderState.REJECTED, null);
+    assertOrderState(createOrderResponse.getOrderId(), OrderState.REJECTED, RejectionReason.INSUFFICIENT_CREDIT);
+  }
+
+  @Test(expected = HttpServerErrorException.InternalServerError.class)
+  public void shouldThrowLocalException() {
+    CreateCustomerResponse createCustomerResponse = restTemplate.postForObject(baseUrl("customers"),
+            new CreateCustomerRequest(CUSTOMER_NAME, new Money("10000000.00")), CreateCustomerResponse.class);
+
+    restTemplate.postForObject(baseUrl("orders"),
+            new CreateOrderRequest(createCustomerResponse.getCustomerId(), new Money("2000000.34")), CreateOrderResponse.class);
+  }
+
+  @Test
+  public void shouldRejectBecauseOfNonExistingUser() {
+    CreateOrderResponse createOrderResponse = restTemplate.postForObject(baseUrl("orders"),
+            new CreateOrderRequest(System.nanoTime(), new Money("1.34")), CreateOrderResponse.class);
+
+    assertOrderState(createOrderResponse.getOrderId(), OrderState.REJECTED, RejectionReason.UNKNOWN_CUSTOMER);
   }
 
   private void assertOrderState(Long id, OrderState expectedState, RejectionReason expectedRejectionReason) {

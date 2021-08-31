@@ -67,10 +67,10 @@ public class CreateOrderSaga implements SimpleReactiveSaga<CreateOrderSagaData> 
   }
 
   private Mono<Void> approve(CreateOrderSagaData data) {
-    return orderService.approveOrder(data.getOrderId());
+    return Mono.defer(() -> orderService.approveOrder(data.getOrderId()));
   }
 
   private Mono<Void> reject(CreateOrderSagaData data) {
-    return orderService.rejectOrder(data.getOrderId(), data.getRejectionReason());
+    return Mono.defer(() -> orderService.rejectOrder(data.getOrderId(), data.getRejectionReason()));
   }
 }
