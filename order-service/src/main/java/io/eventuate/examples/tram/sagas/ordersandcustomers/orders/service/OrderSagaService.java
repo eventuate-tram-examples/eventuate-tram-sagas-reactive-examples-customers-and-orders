@@ -4,9 +4,10 @@ import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.domain.Order;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.domain.OrderRepository;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.sagas.createorder.CreateOrderSagaData;
-import io.eventuate.tram.sagas.orchestration.SagaInstanceFactory;
+import io.eventuate.tram.sagas.reactive.orchestration.ReactiveSagaInstanceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.reactive.TransactionalOperator;
+import reactor.core.publisher.Mono;
 
 public class OrderSagaService {
 
@@ -14,21 +15,27 @@ public class OrderSagaService {
   private OrderRepository orderRepository;
 
   @Autowired
-  private SagaInstanceFactory sagaInstanceFactory;
+  private ReactiveSagaInstanceFactory sagaInstanceFactory;
 
   @Autowired
   private CreateOrderSaga createOrderSaga;
 
-  public OrderSagaService(OrderRepository orderRepository, SagaInstanceFactory sagaInstanceFactory, CreateOrderSaga createOrderSaga) {
+  @Autowired
+  private TransactionalOperator transactionalOperator;
+
+  public OrderSagaService(OrderRepository orderRepository,
+                          ReactiveSagaInstanceFactory sagaInstanceFactory,
+                          CreateOrderSaga createOrderSaga) {
     this.orderRepository = orderRepository;
     this.sagaInstanceFactory = sagaInstanceFactory;
     this.createOrderSaga = createOrderSaga;
   }
 
-  @Transactional
-  public Order createOrder(OrderDetails orderDetails) {
+  public Mono<Order> createOrder(OrderDetails orderDetails) {
     CreateOrderSagaData data = new CreateOrderSagaData(orderDetails);
-    sagaInstanceFactory.create(createOrderSaga, data);
-    return orderRepository.findById(data.getOrderId()).get();
+    return sagaInstanceFactory
+            .create(createOrderSaga, data)
+            .flatMap(instance -> orderRepository.findById(data.getOrderId()))
+            .as(transactionalOperator::transactional);
   }
 }

@@ -2,15 +2,9 @@ package io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging
 
 import io.eventuate.examples.tram.sagas.ordersandcustomers.commondomain.Money;
 
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
-
-@Embeddable
 public class OrderDetails {
 
   private Long customerId;
-
-  @Embedded
   private Money orderTotal;
 
   public OrderDetails() {

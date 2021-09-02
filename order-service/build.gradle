@@ -5,19 +5,12 @@ dependencies {
     compile project(":order-service-api-messaging")
     compile project(":order-service-api-web")
 
-    compile "io.eventuate.tram.core:eventuate-tram-spring-optimistic-locking"
+    compile "io.eventuate.tram.core:eventuate-tram-spring-reactive-jdbc-kafka"
+    compile "io.eventuate.tram.sagas:eventuate-tram-sagas-spring-reactive-orchestration-simple-dsl-starter"
 
-    compile "io.eventuate.tram.core:eventuate-tram-spring-jdbc-kafka"
-    compile "io.eventuate.tram.sagas:eventuate-tram-sagas-spring-orchestration-simple-dsl-starter"
-
-    compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
-    compile "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
     compile "org.springframework.boot:spring-boot-starter-actuator"
-    compile "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
+    compile "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
 
-    compile 'mysql:mysql-connector-java:5.1.36'
-
-    testCompile "io.eventuate.tram.sagas:eventuate-tram-sagas-spring-testing-support"
     testCompile "junit:junit:4.12"
     testCompile "org.mockito:mockito-core:2.23.0"
 }

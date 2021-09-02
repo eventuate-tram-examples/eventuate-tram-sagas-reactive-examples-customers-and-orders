@@ -1,7 +1,8 @@
 package io.eventuate.examples.tram.sagas.ordersandcustomers.orders.web;
 
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.OrderDetails;
-import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.domain.Order;
+import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.OrderState;
+import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.RejectionReason;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.domain.OrderRepository;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.service.OrderSagaService;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.web.CreateOrderRequest;
@@ -11,9 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @RestController
 public class OrderController {
@@ -28,25 +30,28 @@ public class OrderController {
   }
 
   @RequestMapping(value = "/orders", method = RequestMethod.POST)
-  public CreateOrderResponse createOrder(@RequestBody CreateOrderRequest createOrderRequest) {
-    Order order = orderSagaService.createOrder(new OrderDetails(createOrderRequest.getCustomerId(), createOrderRequest.getOrderTotal()));
-    return new CreateOrderResponse(order.getId());
+  public Mono<CreateOrderResponse> createOrder(@RequestBody CreateOrderRequest createOrderRequest) {
+    return orderSagaService
+            .createOrder(new OrderDetails(createOrderRequest.getCustomerId(), createOrderRequest.getOrderTotal()))
+            .map(order -> new CreateOrderResponse(order.getId()));
   }
 
   @RequestMapping(value="/orders/{orderId}", method= RequestMethod.GET)
-  public ResponseEntity<GetOrderResponse> getOrder(@PathVariable Long orderId) {
+  public Mono<ResponseEntity<GetOrderResponse>> getOrder(@PathVariable Long orderId) {
     return orderRepository
             .findById(orderId)
-            .map(o -> new ResponseEntity<>(new GetOrderResponse(o.getId(), o.getState(), o.getRejectionReason()), HttpStatus.OK))
-            .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+            .map(o -> new ResponseEntity<>(new GetOrderResponse(o.getId(),
+                    OrderState.valueOf(o.getState()),
+                    Optional.ofNullable(o.getRejectionReason()).map(RejectionReason::valueOf).orElse(null)), HttpStatus.OK))
+            .switchIfEmpty(Mono.just(new ResponseEntity<>(HttpStatus.NOT_FOUND)));
   }
 
   @RequestMapping(value="/orders/customer/{customerId}", method= RequestMethod.GET)
-  public ResponseEntity<List<GetOrderResponse>> getOrdersByCustomerId(@PathVariable Long customerId) {
-    return new ResponseEntity<List<GetOrderResponse>>(orderRepository
-            .findAllByOrderDetailsCustomerId(customerId)
-            .stream()
-            .map(o -> new GetOrderResponse(o.getId(), o.getState(), o.getRejectionReason()))
-            .collect(Collectors.toList()), HttpStatus.OK);
+  public Flux<GetOrderResponse> getOrdersByCustomerId(@PathVariable Long customerId) {
+    return orderRepository
+            .findAllByCustomerId(customerId)
+            .map(o -> new GetOrderResponse(o.getId(),
+                    OrderState.valueOf(o.getState()),
+                    RejectionReason.valueOf(o.getRejectionReason())));
   }
 }

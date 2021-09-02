@@ -4,40 +4,43 @@ package io.eventuate.examples.tram.sagas.ordersandcustomers.orders.domain;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.OrderDetails;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.OrderState;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.RejectionReason;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.domain.Persistable;
+import org.springframework.data.relational.core.mapping.Table;
 
-import javax.persistence.*;
+import java.math.BigDecimal;
+import java.util.Optional;
 
-@Entity
-@Table(name="orders")
-@Access(AccessType.FIELD)
-public class Order {
+@Table("orders")
+public class Order implements Persistable<Long> {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Enumerated(EnumType.STRING)
-  private OrderState state;
+  private String state;
 
-  @Embedded
-  private OrderDetails orderDetails;
+  private Long customerId;
 
-  @Enumerated(EnumType.STRING)
-  private RejectionReason rejectionReason;
+  private BigDecimal orderTotal;
 
-  @Version
-  private Long version;
+  private String rejectionReason;
+
+  @org.springframework.data.annotation.Transient
+  private boolean newOrder = false;
 
   public Order() {
   }
 
   public Order(OrderDetails orderDetails) {
-    this.orderDetails = orderDetails;
-    this.state = OrderState.PENDING;
+    this.customerId = orderDetails.getCustomerId();
+    this.orderTotal = orderDetails.getOrderTotal().getAmount();
+    this.state = OrderState.PENDING.name();
   }
 
   public static Order createOrder(OrderDetails orderDetails) {
-    return new Order(orderDetails);
+    Order o = new Order(orderDetails);
+    o.newOrder = true;
+    return o;
   }
 
   public Long getId() {
@@ -48,20 +51,33 @@ public class Order {
     this.id = id;
   }
 
+  public Long getCustomerId() {
+    return customerId;
+  }
+
+  public BigDecimal getOrderTotal() {
+    return orderTotal;
+  }
+
   public void approve() {
-    this.state = OrderState.APPROVED;
+    this.state = OrderState.APPROVED.name();
   }
 
   public void reject(RejectionReason rejectionReason) {
-    this.state = OrderState.REJECTED;
-    this.rejectionReason = rejectionReason;
+    this.state = OrderState.REJECTED.name();
+    this.rejectionReason = Optional.ofNullable(rejectionReason).map(Enum::name).orElse(null);
   }
 
-  public OrderState getState() {
+  public String getState() {
     return state;
   }
 
-  public RejectionReason getRejectionReason() {
+  public String getRejectionReason() {
     return rejectionReason;
+  }
+
+  @Override
+  public boolean isNew() {
+    return newOrder;
   }
 }

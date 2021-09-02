@@ -1,9 +1,8 @@
 package io.eventuate.examples.tram.sagas.ordersandcustomers.orders.domain;
 
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import reactor.core.publisher.Flux;
 
-import java.util.List;
-
-public interface OrderRepository extends CrudRepository<Order, Long> {
-  List<Order> findAllByOrderDetailsCustomerId(Long customerId);
+public interface OrderRepository  extends ReactiveCrudRepository<Order, Long> {
+  Flux<Order> findAllByCustomerId(Long customerId);
 }
