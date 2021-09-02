@@ -4,8 +4,8 @@ import io.eventuate.examples.tram.sagas.ordersandcustomers.commondomain.Money;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.customers.api.messaging.commands.ReserveCreditCommand;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.customers.api.messaging.replies.CustomerCreditLimitExceeded;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.customers.api.messaging.replies.CustomerNotFound;
-import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.sagas.createorder.CreateOrderSagaData;
 import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.common.RejectionReason;
+import io.eventuate.examples.tram.sagas.ordersandcustomers.orders.api.messaging.sagas.createorder.CreateOrderSagaData;
 import io.eventuate.tram.commands.consumer.CommandWithDestination;
 import io.eventuate.tram.sagas.reactive.orchestration.ReactiveSagaDefinition;
 import io.eventuate.tram.sagas.reactive.simpledsl.SimpleReactiveSaga;
@@ -23,22 +23,24 @@ public class CreateOrderSaga implements SimpleReactiveSaga<CreateOrderSagaData> 
 
   private ReactiveSagaDefinition<CreateOrderSagaData> sagaDefinition =
           step()
-            .invokeLocal(this::create)
-            .withCompensation(this::reject)
-          .step()
-            .invokeParticipant(this::reserveCredit)
-            .onReply(CustomerNotFound.class, this::handleCustomerNotFound)
-            .onReply(CustomerCreditLimitExceeded.class, this::handleCustomerCreditLimitExceeded)
-          .step()
-            .invokeLocal(this::approve)
-          .build();
+                  .invokeLocal(this::create)
+                  .withCompensation(this::reject)
+                  .step()
+                  .invokeParticipant(this::reserveCredit)
+                  .onReply(CustomerNotFound.class, this::handleCustomerNotFound)
+                  .onReply(CustomerCreditLimitExceeded.class, this::handleCustomerCreditLimitExceeded)
+                  .step()
+                  .invokeLocal(this::approve)
+                  .build();
 
   private Mono<Void> handleCustomerNotFound(CreateOrderSagaData data, CustomerNotFound reply) {
-    return Mono.fromRunnable(() -> data.setRejectionReason(RejectionReason.UNKNOWN_CUSTOMER));
+    data.setRejectionReason(RejectionReason.UNKNOWN_CUSTOMER);
+    return Mono.empty();
   }
 
   private Mono<Void> handleCustomerCreditLimitExceeded(CreateOrderSagaData data, CustomerCreditLimitExceeded reply) {
-    return Mono.fromRunnable(() -> data.setRejectionReason(RejectionReason.INSUFFICIENT_CREDIT));
+    data.setRejectionReason(RejectionReason.INSUFFICIENT_CREDIT);
+    return Mono.empty();
   }
 
   @Override
@@ -46,14 +48,13 @@ public class CreateOrderSaga implements SimpleReactiveSaga<CreateOrderSagaData> 
     return this.sagaDefinition;
   }
 
-  private Mono<Void> create(CreateOrderSagaData data) {
+  private Mono<?> create(CreateOrderSagaData data) {
     return orderService
             .createOrder(data.getOrderDetails())
             .map(o -> {
               data.setOrderId(o.getId());
               return o;
-            })
-            .then();
+            });
   }
 
   private Mono<CommandWithDestination> reserveCredit(CreateOrderSagaData data) {
@@ -61,16 +62,16 @@ public class CreateOrderSaga implements SimpleReactiveSaga<CreateOrderSagaData> 
     Money orderTotal = data.getOrderDetails().getOrderTotal();
 
     return Mono
-            .fromSupplier(() -> send(new ReserveCreditCommand(customerId, data.getOrderId(), orderTotal))
-                      .to("customerService")
-                      .build());
+            .just(send(new ReserveCreditCommand(customerId, data.getOrderId(), orderTotal))
+                    .to("customerService")
+                    .build());
   }
 
   private Mono<Void> approve(CreateOrderSagaData data) {
-    return Mono.defer(() -> orderService.approveOrder(data.getOrderId()));
+    return orderService.approveOrder(data.getOrderId());
   }
 
   private Mono<Void> reject(CreateOrderSagaData data) {
-    return Mono.defer(() -> orderService.rejectOrder(data.getOrderId(), data.getRejectionReason()));
+    return orderService.rejectOrder(data.getOrderId(), data.getRejectionReason());
   }
 }
